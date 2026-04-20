@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
+import "./study.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-geist-sans", // Keeping variable name same so we don't break existing css
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const outfit = Outfit({
+  variable: "--font-geist-mono", // Using outfit for headings/stylish stuff
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "ZylumGraph",
+  title: "Episteme Study",
   description:
-    "AI-native research & study workspace: knowledge graphs from documents, source-backed proof, tutoring, and co-writing.",
+    "Next-Gen AI Study App: Instantly turn documents into flashcards and quizzes, backed by custom Knowledge Graphs.",
 };
 
 export default function RootLayout({
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
       </body>

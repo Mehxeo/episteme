@@ -8,10 +8,17 @@ import ReactFlow, {
   Controls,
   MiniMap,
   type Edge,
+  type EdgeTypes,
   type Node,
+  type NodeTypes,
   useEdgesState,
   useNodesState,
 } from "reactflow";
+
+/** Stable refs for React Flow (avoid error #002). */
+const CANVAS_NODE_TYPES: NodeTypes = {};
+const CANVAS_EDGE_TYPES: EdgeTypes = {};
+const PRO_OPTIONS = { hideAttribution: true as const };
 
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { CanvasEdgeRow } from "@/types/zylum";
@@ -25,6 +32,14 @@ function colorForType(t: string): string {
 }
 
 function toFlowNode(n: DbNode): Node {
+  // Mock mastery logic based on id length to persist pseudo-random colors
+  // In production, this would be fetched from user progress APIs
+  const hash = n.id.charCodeAt(0) + n.name.length;
+  const masteryLevel = hash % 3; // 0, 1, 2
+  let masteryBorder = "1px solid rgba(255,255,255,0.25)";
+  if (masteryLevel === 1) masteryBorder = "2px solid var(--ok)"; // Mastered
+  if (masteryLevel === 2) masteryBorder = "2px solid var(--danger)"; // Needs review
+  
   return {
     id: n.id,
     position: { x: n.x_pos ?? 0, y: n.y_pos ?? 0 },
@@ -32,14 +47,16 @@ function toFlowNode(n: DbNode): Node {
       label: n.name,
       summary: n.summary,
       type: n.type,
+      mastery: masteryLevel
     },
     style: {
       background: colorForType(n.type),
       color: "#fff",
-      borderRadius: 8,
-      padding: "10px 14px",
+      borderRadius: 12,
+      padding: "12px 16px",
       fontSize: 13,
-      border: "1px solid rgba(255,255,255,0.25)",
+      border: masteryBorder,
+      boxShadow: masteryLevel === 1 ? '0 0 10px rgba(16, 185, 129, 0.3)' : masteryLevel === 2 ? '0 0 10px rgba(239, 68, 68, 0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
       maxWidth: 220,
     },
   };
@@ -227,12 +244,14 @@ export function KnowledgeCanvas({ canvasId, graphDensity, onSelectNode }: Props)
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={CANVAS_NODE_TYPES}
+        edgeTypes={CANVAS_EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         fitView
-        proOptions={{ hideAttribution: true }}
+        proOptions={PRO_OPTIONS}
       >
         <Background gap={16} />
         <MiniMap

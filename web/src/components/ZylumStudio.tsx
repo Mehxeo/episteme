@@ -1,28 +1,22 @@
 "use client";
 
-import { LayoutGrid, LogOut, Palette, PanelRight } from "lucide-react";
+import { LayoutGrid, LogOut, Palette, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { CoWriterPanel } from "@/components/CoWriterPanel";
 import { Inspector } from "@/components/Inspector";
 import { KnowledgeCanvas } from "@/components/KnowledgeCanvas";
 import { StudyPanel } from "@/components/StudyPanel";
+import { FlashcardsPanel } from "@/components/FlashcardsPanel";
+import { QuizPanel } from "@/components/QuizPanel";
 import { Uploader } from "@/components/Uploader";
 import { useThemeConfig } from "@/context/ThemeContext";
+import { DEFAULT_GEMMA_STUDY_MODEL, GEMMA_STUDY_MODELS } from "@/lib/gemma-models";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { DbCanvas, GraphDensity } from "@/types/zylum";
 
-const STUDY_MODELS = [
-  "openrouter/elephant-alpha",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
-  "openai/gpt-oss-120b:free",
-] as const;
-
-type RightTab = "sources" | "study" | "notes";
+type RightTab = "sources" | "flashcards" | "quiz" | "chat";
 
 type Props = {
   canvasId: string;
@@ -35,11 +29,17 @@ export function ZylumStudio({ canvasId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState<RightTab>("sources");
-  const [draft, setDraft] = useState("");
-  const [model, setModel] = useState<string>(STUDY_MODELS[4]);
+  const [model, setModel] = useState<string>(DEFAULT_GEMMA_STUDY_MODEL);
   const [contextHint, setContextHint] = useState<string | undefined>();
   const [titleEdit, setTitleEdit] = useState("");
   const [themeOpen, setThemeOpen] = useState(false);
+  const panelOpen = Boolean(selectedNodeId);
+  const tabs: Array<{ id: RightTab; label: string }> = [
+    { id: "sources", label: "Context" },
+    { id: "flashcards", label: "Cards" },
+    { id: "quiz", label: "Quiz test" },
+    { id: "chat", label: "Kai Tutor" },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -192,7 +192,7 @@ export function ZylumStudio({ canvasId }: Props) {
           <label className="model-pick">
             <span className="sr-only">Model</span>
             <select value={model} onChange={(e) => setModel(e.target.value)}>
-              {STUDY_MODELS.map((m) => (
+              {GEMMA_STUDY_MODELS.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
@@ -237,62 +237,64 @@ export function ZylumStudio({ canvasId }: Props) {
         </div>
       )}
 
-      <main className="panes studio-panes">
-        <section className="pane left">
+      <main className="panes studio-panes studio-panes-layout">
+        <section className="pane left studio-left-pane">
           <Uploader canvasId={canvasId} />
           <p className="uploader-hint small-print">
-            Large ZIP archives and layout-aware OCR can plug into the same pipeline from your worker — upload PDFs here
-            today.
+            Upload PDFs, images, or audio files. Episteme&apos;s multimodal AI will map concepts onto the canvas.
           </p>
         </section>
-        <section className="pane center">
+        <section className="pane center studio-center-pane">
           <KnowledgeCanvas
             canvasId={canvasId}
             graphDensity={graphDensity}
             onSelectNode={setSelectedNodeId}
           />
         </section>
-        <section className="pane right studio-right">
-          <div className="right-tabs">
-            <button
-              type="button"
-              className={rightTab === "sources" ? "tab active" : "tab"}
-              onClick={() => setRightTab("sources")}
-            >
-              Sources
-            </button>
-            <button
-              type="button"
-              className={rightTab === "study" ? "tab active" : "tab"}
-              onClick={() => setRightTab("study")}
-            >
-              Study
-            </button>
-            <button
-              type="button"
-              className={rightTab === "notes" ? "tab active" : "tab"}
-              onClick={() => setRightTab("notes")}
-            >
-              Co-writer
-            </button>
+        
+        {/* Slide-Out Study Panel */}
+        <section className={panelOpen ? "glass-panel studio-slide-panel open" : "glass-panel studio-slide-panel"}>
+          <div className="right-tabs studio-right-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={rightTab === tab.id ? "studio-tab active" : "studio-tab"}
+                onClick={() => setRightTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
             <span className="tab-spacer" />
-            <span className="tab-meta" title="Selection">
-              <PanelRight size={14} /> {selectedNodeId ? "Node selected" : "No selection"}
-            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedNodeId(null)}
+              className="studio-panel-close"
+              title="Close panel"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <div className="right-body">
+          <div className="right-body studio-right-body">
             {rightTab === "sources" && <Inspector nodeId={selectedNodeId} />}
-            {rightTab === "study" && (
-              <StudyPanel canvasId={canvasId} model={model} contextHint={contextHint} />
-            )}
-            {rightTab === "notes" && (
-              <CoWriterPanel
+            {rightTab === "flashcards" && (
+              <FlashcardsPanel
                 canvasId={canvasId}
                 model={model}
-                draft={draft}
-                onDraftChange={setDraft}
                 contextHint={contextHint}
+                nodeId={selectedNodeId}
               />
+            )}
+            {rightTab === "quiz" && (
+              <QuizPanel
+                canvasId={canvasId}
+                model={model}
+                contextHint={contextHint}
+                nodeId={selectedNodeId}
+              />
+            )}
+            {rightTab === "chat" && (
+              <StudyPanel canvasId={canvasId} model={model} contextHint={contextHint} />
             )}
           </div>
         </section>

@@ -47,7 +47,7 @@ export default function StudioHomePage() {
         .from("canvases")
         .insert({
           user_id: user.id,
-          title: "Untitled canvas",
+          title: "Untitled Study Set",
           settings: { graphDensity: "overview" },
         })
         .select("id")
@@ -56,7 +56,7 @@ export default function StudioHomePage() {
       router.push(`/studio/${data.id}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create canvas");
+      setError(e instanceof Error ? e.message : "Could not create study set");
     } finally {
       setBusy(false);
     }
@@ -66,15 +66,15 @@ export default function StudioHomePage() {
     <div className="shell studio-home">
       <header className="topbar">
         <div>
-          <h1>Your canvases</h1>
-          <p className="tagline">Each canvas keeps its own graph, uploads, and layout.</p>
+          <h1>Your Study Sets</h1>
+          <p className="tagline">Each set has its own flashcards, quizzes, and knowledge graph.</p>
         </div>
         <div className="topbar-actions">
           <Link href="/" className="btn ghost">
             Home
           </Link>
           <button type="button" className="btn primary" disabled={busy} onClick={() => void createCanvas()}>
-            {busy ? "Creating…" : "New canvas"}
+            {busy ? "Creating…" : "New Study Set"}
           </button>
         </div>
       </header>
@@ -82,7 +82,7 @@ export default function StudioHomePage() {
         {error && <p className="err">{error}</p>}
         {canvases === null && <p className="muted">Loading…</p>}
         {canvases && canvases.length === 0 && !error && (
-          <p className="muted">No canvases yet. Create one to start studying.</p>
+          <p className="muted">No study sets yet. Create one to start learning.</p>
         )}
         {canvases && canvases.length > 0 && (
           <ul className="canvas-list">
