@@ -3,13 +3,14 @@
 import { FileUp, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 
-import { createBrowserSupabase } from "@/lib/supabase/client";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Props = {
+  canvasId: string;
   onUploaded?: (documentId: string) => void;
 };
 
-export function Uploader({ onUploaded }: Props) {
+export function Uploader({ canvasId, onUploaded }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,15 @@ export function Uploader({ onUploaded }: Props) {
       setMessage(null);
       try {
         const supabase = createBrowserSupabase();
-        const objectPath = `${crypto.randomUUID()}-${file.name}`;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          setError("You need to be signed in to upload.");
+          return;
+        }
+
+        const objectPath = `${user.id}/${crypto.randomUUID()}-${file.name}`;
         const { error: upErr } = await supabase.storage
           .from("archives")
           .upload(objectPath, file, { upsert: true, contentType: "application/pdf" });
@@ -36,7 +45,7 @@ export function Uploader({ onUploaded }: Props) {
 
         const { data: doc, error: docErr } = await supabase
           .from("documents")
-          .insert({ filename: file.name, file_url: fileUrl })
+          .insert({ filename: file.name, file_url: fileUrl, canvas_id: canvasId })
           .select("id")
           .single();
         if (docErr) throw docErr;
@@ -68,7 +77,7 @@ export function Uploader({ onUploaded }: Props) {
         setBusy(false);
       }
     },
-    [onUploaded]
+    [canvasId, onUploaded]
   );
 
   const onDrop = useCallback(
@@ -92,7 +101,9 @@ export function Uploader({ onUploaded }: Props) {
   return (
     <div className="uploader">
       <h2 className="uploader-title">Upload</h2>
-      <p className="uploader-hint">Drop a PDF or choose a file. It is stored in Supabase and sent to the ingest worker.</p>
+      <p className="uploader-hint">
+        Drop a PDF or choose a file. It is stored under your account in Supabase and sent to the ingest worker.
+      </p>
       <label
         className="dropzone"
         onDragOver={(e) => e.preventDefault()}

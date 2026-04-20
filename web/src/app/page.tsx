@@ -1,5 +1,5 @@
-import { EpistemeApp } from "@/components/EpistemeApp";
+import { LandingPage } from "@/components/LandingPage";
 
 export default function Home() {
-  return <EpistemeApp />;
+  return <LandingPage />;
 }

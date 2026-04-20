@@ -3,7 +3,7 @@
 import { BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { createBrowserSupabase } from "@/lib/supabase/client";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { DbChunk } from "@/types/episteme";
 
 type Props = {

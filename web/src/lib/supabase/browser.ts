@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
 function getSupabaseUrl(): string | undefined {
   return process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,7 +16,7 @@ export function hasBrowserSupabaseConfig(): boolean {
   return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }
 
-export function createBrowserSupabase(): SupabaseClient {
+export function createBrowserSupabase() {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();
   if (!url || !key) {
@@ -24,5 +24,5 @@ export function createBrowserSupabase(): SupabaseClient {
       "Missing NEXT_PUBLIC_SUPABASE_URL and a client key (NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)"
     );
   }
-  return createClient(url, key);
+  return createBrowserClient(url, key);
 }
